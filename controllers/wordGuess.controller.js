@@ -1,22 +1,22 @@
 const { generateHint } = require("../services/wordGuess.services");
 
 const getHints = async (req, res) => {
-  const prompt = "only two very simple words that describe 'AMIGO'";
+  const { data, hintForTheDay } = await generateHint();
 
-  const hintRes = await generateHint({
-    prompt,
-  });
+  if (data) {
+    const hints = data
+      .split(/,|and/)
+      .map((hint) => hint.replace(/\*/g, "").trim());
 
-  if (hintRes) {
-    const hints = hintRes.split(",");
     res.status(200).send({
-      hint: hints.map((hint) => hint.trim()),
+      wordOfTheDay: hintForTheDay,
+      hint: hints,
       success: true,
     });
   } else {
     res.status(500).send(
       JSON.stringify({
-        message: "Error generating hint: " + hintRes.error,
+        message: `Error generating hint for ${hintForTheDay}`,
         success: false,
       })
     );
