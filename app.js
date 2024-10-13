@@ -21,7 +21,6 @@ app.get("/", async (req, res) => {
   res.status(200).send({
     message: "Hi",
   });
-  console.log("App working");
 });
 
 app.listen(process.env.PORT || 8000, () => {

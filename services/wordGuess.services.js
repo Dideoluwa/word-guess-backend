@@ -4,15 +4,19 @@ const axios = require("axios");
 
 require("dotenv").config();
 
+const base_url = process.env.API_URL;
+
+const key = process.env.API_KEY;
+
+const name = process.env.NAME;
+
+const id = process.env.SECRET_ID;
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL });
+
 const sentDataHandler = (payload) => {
-  const base_url = process.env.API_URL;
-
-  const key = process.env.API_KEY;
-
-  const name = process.env.NAME;
-
-  const id = process.env.SECRET_ID;
-
   const response = axios({
     url: `${base_url}/v0/${id}/${encodeURIComponent(name)}`,
     method: "POST",
@@ -34,35 +38,63 @@ const sentDataHandler = (payload) => {
   return response;
 };
 
+const getAllWords = (payload) => {
+  const response = axios({
+    url: `${base_url}/v0/${id}/${encodeURIComponent(name)}`,
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+  });
+  return response;
+};
+
 const sendData = async (payload) => {
   try {
-    console.log(payload.wordForTheDay);
     const sentDataRes = await sentDataHandler(payload);
     console.log(`word of the day sent (${payload.wordForTheDay})`);
     return sentDataRes.data.records;
   } catch (err) {
-    console.error(
-      "Error posting to Airtable:",
-      err.response?.data || err.message
-    );
+    console.error("Error posting to table:", err.response?.data || err.message);
   }
 };
 
-const generateHint = async (payload) => {
-  const wordsLength = words.length;
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-  const wordForTheDayIndex = Math.floor(Math.random() * wordsLength);
-
-  const wordForTheDay = words[wordForTheDayIndex];
-
-  const hintPrompt = `${process.env.QUESTION} '${wordForTheDay}'`;
-
-  const prompt = hintPrompt;
-
+const getWordsFromDb = async () => {
   try {
+    const getDataRes = await getAllWords();
+    return getDataRes.data.records;
+  } catch (err) {
+    console.error("Error posting to table:", err.response?.data || err.message);
+  }
+};
+
+const removeUsedWords = (arr1, arr2) => {
+  const fetchedWordsSet = new Set(arr2.map((item) => item?.fields?.word));
+
+  return arr1.filter((word) => !fetchedWordsSet.has(word));
+};
+
+const generateHint = async () => {
+  try {
+    const retrievedData = await getWordsFromDb();
+
+    const getWords = removeUsedWords(words, retrievedData);
+
+    if (!getWords.length) {
+      throw new Error("No words available after filtering");
+    }
+
+    const wordsLength = getWords?.length;
+
+    const wordForTheDayIndex = Math.floor(Math.random() * wordsLength);
+
+    const wordForTheDay = getWords[wordForTheDayIndex];
+
+    const hintPrompt = `${process.env.QUESTION} '${wordForTheDay}'`;
+
+    const prompt = hintPrompt;
+
     const result = await model.generateContent(prompt);
 
     const data = result.response.text();
