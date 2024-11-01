@@ -108,8 +108,6 @@ const generateHint = async () => {
 
     const hints = hintsArr.join(" & ");
 
-    console.log(wordForTheDay, hints);
-
     const payloadData = {
       hints,
       wordForTheDay,
