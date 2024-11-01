@@ -30,6 +30,7 @@ const sentDataHandler = (payload) => {
           fields: {
             word: payload.wordForTheDay,
             hints: JSON.stringify(payload.hints),
+            timestamp: payload.timestamp,
           },
         },
       ],
@@ -38,7 +39,7 @@ const sentDataHandler = (payload) => {
   return response;
 };
 
-const getAllWords = (payload) => {
+const getAllWords = () => {
   const response = axios({
     url: `${base_url}/v0/${id}/${encodeURIComponent(name)}`,
     method: "GET",
@@ -76,6 +77,8 @@ const removeUsedWords = (arr1, arr2) => {
 };
 
 const generateHint = async () => {
+  const date = new Date().toLocaleDateString("en-GB");
+
   try {
     const retrievedData = await getWordsFromDb();
 
@@ -99,15 +102,18 @@ const generateHint = async () => {
 
     const data = result.response.text();
 
-    const hints = data
+    const hintsArr = data
       .split(/,|and/)
       .map((hint) => hint.replace(/\*/g, "").trim());
+
+    const hints = hintsArr.join(" & ");
 
     console.log(wordForTheDay, hints);
 
     const payloadData = {
       hints,
       wordForTheDay,
+      timestamp: date,
     };
 
     const sendDataRes = await sendData(payloadData);
