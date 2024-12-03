@@ -29,7 +29,7 @@ const sentDataHandler = (payload) => {
         {
           fields: {
             word: payload.wordForTheDay,
-            hints: JSON.stringify(payload.hints),
+            hints: payload.hints,
             timestamp: payload.timestamp,
           },
         },
@@ -94,22 +94,44 @@ const generateHint = async () => {
 
     const wordForTheDay = getWords[wordForTheDayIndex];
 
-    const hintPrompt = `${process.env.QUESTION} '${wordForTheDay}'`;
+    const hintPrompt = `For a word guess game, come up with just and only/strictly (it must never be a statement, it must be ttwo one-word alone) two one-word hints that start their first letters with capital letters for the word '${wordForTheDay}'. 
 
+It’s a daily word game like worlde and the user has only five attempts to guess the word based on the provided hints  
+
+Rules for generating hints:
+1. If the word to be guessed is an easy or common word, make the hints difficult
+
+2. If the word to be guessed is less common or difficult , make the hints not so difficult/ easier
+
+3.  The hints should only help narrow down the word’s meaning or context but must not 
+explicitly include synonyms or overly obvious clues.
+
+ 4.   Ensure the hints are distinct from each other and relate to different aspects of the word (e.g., meaning, usage, cultural reference, etc.).`;
     const prompt = hintPrompt;
 
     const result = await model.generateContent(prompt);
 
     const data = result.response.text();
 
+    console.log(data);
+
     const hintsArr = data
-      .split(/,|and/)
-      .map((hint) => hint.replace(/\*/g, "").trim());
+      .replace(/\s+/g, " ")
+      .replace(/\./g, "")
+      .split(/\s+|\n|,|and/)
+      .map((hint) => hint.replace(/\*/g, "").replace(/,/g, "").trim())
+      .filter((hint) => hint !== "");
 
     const hints = hintsArr.join(" & ");
 
+    console.log(hints);
+
     const payloadData = {
-      hints,
+      hints: hints
+        .replace(/&\s*$/, "")
+        .replace(/&/g, (match, index) =>
+          index === hints.indexOf("&") ? match : " & "
+        ),
       wordForTheDay,
       timestamp: date,
     };
