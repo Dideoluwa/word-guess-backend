@@ -113,8 +113,6 @@ explicitly include synonyms or overly obvious clues.
 
     const data = result.response.text();
 
-    console.log(data);
-
     const hintsArr = data
       .replace(/\s+/g, " ")
       .replace(/\./g, "")
@@ -123,8 +121,6 @@ explicitly include synonyms or overly obvious clues.
       .filter((hint) => hint !== "");
 
     const hints = hintsArr.join(" & ");
-
-    console.log(hints);
 
     const payloadData = {
       hints: hints
