@@ -77,7 +77,10 @@ const removeUsedWords = (arr1, arr2) => {
 };
 
 const generateHint = async () => {
-  const date = new Date().toLocaleDateString("en-GB");
+  const currentDate = new Date();
+  const oneDayInMs = 24 * 60 * 60 * 1000;
+  const tomorrow = new Date(currentDate.getTime() + oneDayInMs);
+  const date = tomorrow.toLocaleDateString("en-GB");
 
   try {
     const retrievedData = await getWordsFromDb();
