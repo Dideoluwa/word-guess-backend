@@ -1,6 +1,7 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const words = require("../utils/five-letter-words");
 const axios = require("axios");
+const crypto = require("crypto");
 
 require("dotenv").config();
 
@@ -12,9 +13,36 @@ const name = process.env.NAME;
 
 const id = process.env.SECRET_ID;
 
+const encryptionKey = process.env.ENCRYPTION_KEY;
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+const encryptionAlgorithm = process.env.ENCRYPTION_ALGORITHM;
+
 const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL });
+
+const encryptData = (data, key) => {
+  if (Buffer.from(key, "hex").length !== 32) {
+    throw new Error(
+      "Invalid key length: Key must be 32 bytes (256 bits) in hex format"
+    );
+  }
+
+  const iv = crypto.randomBytes(12);
+
+  const cipher = crypto.createCipheriv(
+    encryptionAlgorithm,
+    Buffer.from(key, "hex"),
+    iv
+  );
+
+  let encrypted = cipher.update(JSON.stringify(data), "utf8", "hex");
+  encrypted += cipher.final("hex");
+
+  const authTag = cipher.getAuthTag();
+
+  return `${iv.toString("hex")}:${encrypted}:${authTag.toString("hex")}`;
+};
 
 const sentDataHandler = (payload) => {
   const response = axios({
@@ -131,7 +159,7 @@ explicitly include synonyms or overly obvious clues.
         .replace(/&/g, (match, index) =>
           index === hints.indexOf("&") ? match : " & "
         ),
-      wordForTheDay,
+      wordForTheDay: encryptData(wordForTheDay, encryptionKey),
       timestamp: date,
     };
 
