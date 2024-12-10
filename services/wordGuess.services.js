@@ -158,7 +158,8 @@ explicitly include synonyms or overly obvious clues.
         .replace(/&/g, (match, index) =>
           index === hints.indexOf("&") ? match : " & "
         ),
-      wordForTheDay: encryptData(wordForTheDay, encryptionKey),
+      // wordForTheDay: encryptData(wordForTheDay, encryptionKey),
+      wordForTheDay,
       timestamp: date,
     };
 
