@@ -82,7 +82,6 @@ const getAllWords = () => {
 const sendData = async (payload) => {
   try {
     const sentDataRes = await sentDataHandler(payload);
-    console.log(`word of the day sent (${payload.wordForTheDay})`);
     return sentDataRes.data.records;
   } catch (err) {
     console.error("Error posting to table:", err.response?.data || err.message);
