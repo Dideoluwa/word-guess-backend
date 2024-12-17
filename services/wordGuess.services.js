@@ -2,6 +2,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const words = require("../utils/five-letter-words");
 const axios = require("axios");
 const crypto = require("crypto");
+const WordsDao = require("../dao/word.dao");
 
 require("dotenv").config();
 
@@ -98,7 +99,7 @@ const getWordsFromDb = async () => {
 };
 
 const removeUsedWords = (arr1, arr2) => {
-  const fetchedWordsSet = new Set(arr2.map((item) => item?.fields?.word));
+  const fetchedWordsSet = new Set(arr2.map((item) => item?.word));
 
   return arr1.filter((word) => !fetchedWordsSet.has(word));
 };
@@ -110,7 +111,9 @@ const generateHint = async () => {
   const date = tomorrow.toLocaleDateString("en-GB");
 
   try {
-    const retrievedData = await getWordsFromDb();
+    // const retrievedData = await getWordsFromDb();
+
+    const retrievedData = await WordsDao.getAllWords();
 
     const getWords = removeUsedWords(words, retrievedData);
 
@@ -159,13 +162,18 @@ explicitly include synonyms or overly obvious clues.
           index === hints.indexOf("&") ? match : " & "
         ),
       // wordForTheDay: encryptData(wordForTheDay, encryptionKey),
-      wordForTheDay,
+      word: wordForTheDay,
       timestamp: date,
     };
 
-    const sendDataRes = await sendData(payloadData);
+    // const sendDataRes = await sendData(payloadData);
 
-    return { data, wordForTheDay, sendDataRes };
+    const sendDataRes = await WordsDao.sendWordToDb(payloadData);
+    return {
+      data,
+      wordForTheDay,
+      sendDataRes,
+    };
   } catch (error) {
     console.error("Failed to generate hints:", error);
   }

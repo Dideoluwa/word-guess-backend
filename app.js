@@ -4,6 +4,7 @@ const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const wordGuessRouter = require("./routes/wordGuess");
 require("./scripts/cronJob");
+require("./config/database");
 
 const app = express();
 
