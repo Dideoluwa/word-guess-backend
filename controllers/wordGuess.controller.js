@@ -1,4 +1,4 @@
-const { generateHint } = require("../services/wordGuess.services");
+const { generateHint, getAllWords } = require("../services/wordGuess.services");
 
 const getHints = async (req, res) => {
   const { data, hintForTheDay } = await generateHint();
@@ -22,5 +22,22 @@ const getHints = async (req, res) => {
     );
   }
 };
+const testController = async (req, res) => {
+  res.status(200).send("Testing");
+};
 
-module.exports = { getHints };
+const getWords = async (req, res) => {
+  try {
+    const words = await getAllWords();
+    res.status(200).send(words);
+  } catch (error) {
+    res.status(500).send(
+      JSON.stringify({
+        message: "Error getting all words",
+        success: false,
+      })
+    );
+  }
+};
+
+module.exports = { getHints, getWords, testController };
