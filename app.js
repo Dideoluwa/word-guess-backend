@@ -3,8 +3,8 @@ const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const wordGuessRouter = require("./routes/wordGuess");
-const functions = require("firebase-functions");
-require("./scripts/cronJob");
+const functions = require("firebase-functions/v2");
+const cronJobs = require("./scripts/cronJob");
 require("./config/database");
 
 require("dotenv").config();
@@ -30,5 +30,7 @@ app.get("/", async (req, res) => {
 app.listen(2109, () => {
   console.log(`Server is running on port ${2109}`);
 });
+
+exports.schedule = cronJobs.schedule;
 
 exports.word_guess_api = functions.https.onRequest(app);

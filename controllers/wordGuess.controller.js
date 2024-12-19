@@ -22,9 +22,6 @@ const getHints = async (req, res) => {
     );
   }
 };
-const testController = async (req, res) => {
-  res.status(200).send("Testing");
-};
 
 const getWords = async (req, res) => {
   try {
@@ -40,4 +37,4 @@ const getWords = async (req, res) => {
   }
 };
 
-module.exports = { getHints, getWords, testController };
+module.exports = { getHints, getWords };

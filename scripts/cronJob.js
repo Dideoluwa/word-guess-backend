@@ -1,15 +1,21 @@
-const cron = require("node-cron");
+// const cron = require("node-cron");
 const { generateHint } = require("../services/wordGuess.services");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 
-cron.schedule(
-  "0 12 * * *",
-  () => {
-    generateHint();
-  },
-  {
-    scheduled: true,
-    timezone: "UTC",
-  }
-);
+// cron.schedule(
+//   "0 12 * * *",
+//   () => {
+//     generateHint();
+//   },
+//   {
+//     scheduled: true,
+//     timezone: "UTC",
+//   }
+// );
 
-module.exports = cron;
+exports.schedule = onSchedule("0 12 * * *", async (event) => {
+  generateHint();
+  return null;
+});
+
+// module.exports = cron;
