@@ -1,10 +1,12 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const words = require("../utils/five-letter-words");
 // const axios = require("axios");
-// const crypto = require("crypto");
+const crypto = require("crypto");
 const WordsDao = require("../dao/word.dao");
 
 require("dotenv").config();
+
+const startDate = "03/12/2024";
 
 // const base_url = process.env.API_URL;
 
@@ -14,36 +16,36 @@ require("dotenv").config();
 
 // const id = process.env.SECRET_ID;
 
-// const encryptionKey = process.env.ENCRYPTION_KEY;
+const encryptionKey = process.env.ENCRYPTION_KEY;
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// const encryptionAlgorithm = process.env.ENCRYPTION_ALGORITHM;
+const encryptionAlgorithm = process.env.ENCRYPTION_ALGORITHM;
 
 const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL });
 
-// const encryptData = (data, key) => {
-//   if (Buffer.from(key, "hex").length !== 32) {
-//     throw new Error(
-//       "Invalid key length: Key must be 32 bytes (256 bits) in hex format"
-//     );
-//   }
+const encryptData = (data, key) => {
+  if (Buffer.from(key, "hex").length !== 32) {
+    throw new Error(
+      "Invalid key length: Key must be 32 bytes (256 bits) in hex format"
+    );
+  }
 
-//   const iv = crypto.randomBytes(12);
+  const iv = crypto.randomBytes(12);
 
-//   const cipher = crypto.createCipheriv(
-//     encryptionAlgorithm,
-//     Buffer.from(key, "hex"),
-//     iv
-//   );
+  const cipher = crypto.createCipheriv(
+    encryptionAlgorithm,
+    Buffer.from(key, "hex"),
+    iv
+  );
 
-//   let encrypted = cipher.update(JSON.stringify(data), "utf8", "hex");
-//   encrypted += cipher.final("hex");
+  let encrypted = cipher.update(JSON.stringify(data), "utf8", "hex");
+  encrypted += cipher.final("hex");
 
-//   const authTag = cipher.getAuthTag();
+  const authTag = cipher.getAuthTag();
 
-//   return `${iv.toString("hex")}:${encrypted}:${authTag.toString("hex")}`;
-// };
+  return `${iv.toString("hex")}:${encrypted}:${authTag.toString("hex")}`;
+};
 
 // const sentDataHandler = (payload) => {
 //   const response = axios({
@@ -116,6 +118,24 @@ const getAllWords = async () => {
   }
 };
 
+const getWordForTheDay = async (timestamp) => {
+  try {
+    const retrievedData = await WordsDao.getWordByTimestamp(timestamp);
+    return retrievedData;
+  } catch (err) {
+    throw new Error(`No data found for the given timestamp: ${timestamp}`);
+  }
+};
+
+const incrementDailyPlays = async (timestamp) => {
+  try {
+    const incrementData = await WordsDao.incrementDailyPlays(timestamp);
+    return incrementData;
+  } catch (err) {
+    return err;
+  }
+};
+
 const generateHint = async () => {
   const currentDate = new Date();
   const oneDayInMs = 24 * 60 * 60 * 1000;
@@ -158,6 +178,11 @@ explicitly include synonyms or overly obvious clues.
 
     const data = result.response.text();
 
+    const puzzleNumber =
+      parseInt(date.split("/")[0]) - parseInt(startDate.split("/")[0]);
+
+    const dailyPlays = 0;
+
     const hintsArr = data
       .replace(/\s+/g, " ")
       .replace(/\./g, "")
@@ -173,9 +198,11 @@ explicitly include synonyms or overly obvious clues.
         .replace(/&/g, (match, index) =>
           index === hints.indexOf("&") ? match : " & "
         ),
-      // wordForTheDay: encryptData(wordForTheDay, encryptionKey),
-      word: wordForTheDay,
+      word: encryptData(wordForTheDay, encryptionKey),
+      // word: wordForTheDay,
       timestamp: date,
+      puzzleNumber,
+      dailyPlays,
     };
 
     // const sendDataRes = await sendData(payloadData);
@@ -191,4 +218,9 @@ explicitly include synonyms or overly obvious clues.
   }
 };
 
-module.exports = { generateHint, getAllWords };
+module.exports = {
+  generateHint,
+  getAllWords,
+  getWordForTheDay,
+  incrementDailyPlays,
+};
