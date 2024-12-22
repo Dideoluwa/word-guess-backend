@@ -7,7 +7,7 @@ const {
   dailyPlaysIncrement,
 } = require("../controllers/wordGuess.controller");
 
-wordGuessRouter.get("/word-guess/hint", getHints);
+wordGuessRouter.post("/word-guess/hint", getHints);
 wordGuessRouter.get("/word-guess/words", getWords);
 wordGuessRouter.get("/word-guess/word-of-the-day/:date", getWordByTimeStamp);
 wordGuessRouter.put("/word-guess/daily-plays/:date", dailyPlaysIncrement);

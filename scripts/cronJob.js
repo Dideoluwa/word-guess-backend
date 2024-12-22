@@ -1,4 +1,4 @@
-// const cron = require("node-cron");
+const cron = require("node-cron");
 const { generateHint } = require("../services/wordGuess.services");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 

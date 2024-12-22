@@ -6,16 +6,14 @@ const {
 } = require("../services/wordGuess.services");
 
 const getHints = async (req, res) => {
-  const { data, hintForTheDay } = await generateHint();
+  const { data, word, hintForTheDay, hints, sendDataRes } =
+    await generateHint();
 
   if (data) {
-    const hints = data
-      .split(/,|and/)
-      .map((hint) => hint.replace(/\*/g, "").trim());
-
     res.status(200).send({
-      wordOfTheDay: hintForTheDay,
+      wordOfTheDay: word,
       hint: hints,
+      sendDataRes,
       success: true,
     });
   } else {

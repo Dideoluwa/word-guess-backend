@@ -178,8 +178,14 @@ explicitly include synonyms or overly obvious clues.
 
     const data = result.response.text();
 
-    const puzzleNumber =
-      parseInt(date.split("/")[0]) - parseInt(startDate.split("/")[0]);
+    const oneDayInMs = 24 * 60 * 60 * 1000;
+
+    const parsedStartDate = new Date(startDate.split("/").reverse().join("-"));
+    const parsedDate = new Date(date.split("/").reverse().join("-"));
+
+    const puzzleNumber = Math.floor(
+      (parsedDate.getTime() - parsedStartDate.getTime()) / oneDayInMs
+    );
 
     const dailyPlays = 0;
 
@@ -203,14 +209,19 @@ explicitly include synonyms or overly obvious clues.
       timestamp: date,
       puzzleNumber,
       dailyPlays,
+      isEncrypted: true,
     };
 
     // const sendDataRes = await sendData(payloadData);
 
     const sendDataRes = await WordsDao.sendWordToDb(payloadData);
     return {
-      data,
-      wordForTheDay,
+      hints: hints
+        .replace(/&\s*$/, "")
+        .replace(/&/g, (match, index) =>
+          index === hints.indexOf("&") ? match : " & "
+        ),
+      word: encryptData(wordForTheDay, encryptionKey),
       sendDataRes,
     };
   } catch (error) {
