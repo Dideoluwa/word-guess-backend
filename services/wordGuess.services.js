@@ -1,17 +1,20 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const words = require("../utils/five-letter-words");
-const axios = require("axios");
+// const axios = require("axios");
 const crypto = require("crypto");
+const WordsDao = require("../dao/word.dao");
 
 require("dotenv").config();
 
-const base_url = process.env.API_URL;
+const startDate = "03/12/2024";
 
-const key = process.env.API_KEY;
+// const base_url = process.env.API_URL;
 
-const name = process.env.NAME;
+// const key = process.env.API_KEY;
 
-const id = process.env.SECRET_ID;
+// const name = process.env.NAME;
+
+// const id = process.env.SECRET_ID;
 
 const encryptionKey = process.env.ENCRYPTION_KEY;
 
@@ -44,63 +47,93 @@ const encryptData = (data, key) => {
   return `${iv.toString("hex")}:${encrypted}:${authTag.toString("hex")}`;
 };
 
-const sentDataHandler = (payload) => {
-  const response = axios({
-    url: `${base_url}/v0/${id}/${encodeURIComponent(name)}`,
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${key}`,
-      "Content-Type": "application/json",
-    },
-    data: {
-      records: [
-        {
-          fields: {
-            word: payload.wordForTheDay,
-            hints: payload.hints,
-            timestamp: payload.timestamp,
-          },
-        },
-      ],
-    },
-  });
-  return response;
-};
+// const sentDataHandler = (payload) => {
+//   const response = axios({
+//     url: `${base_url}/v0/${id}/${encodeURIComponent(name)}`,
+//     method: "POST",
+//     headers: {
+//       Authorization: `Bearer ${key}`,
+//       "Content-Type": "application/json",
+//     },
+//     data: {
+//       records: [
+//         {
+//           fields: {
+//             word: payload.wordForTheDay,
+//             hints: payload.hints,
+//             timestamp: payload.timestamp,
+//           },
+//         },
+//       ],
+//     },
+//   });
+//   return response;
+// };
 
-const getAllWords = () => {
-  const response = axios({
-    url: `${base_url}/v0/${id}/${encodeURIComponent(name)}`,
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${key}`,
-      "Content-Type": "application/json",
-    },
-  });
-  return response;
-};
+// const getAllWords = () => {
+//   const response = axios({
+//     url: `${base_url}/v0/${id}/${encodeURIComponent(name)}`,
+//     method: "GET",
+//     headers: {
+//       Authorization: `Bearer ${key}`,
+//       "Content-Type": "application/json",
+//     },
+//   });
+//   return response;
+// };
 
-const sendData = async (payload) => {
-  try {
-    const sentDataRes = await sentDataHandler(payload);
-    return sentDataRes.data.records;
-  } catch (err) {
-    console.error("Error posting to table:", err.response?.data || err.message);
-  }
-};
+// const sendData = async (payload) => {
+//   try {
+//     const sentDataRes = await sentDataHandler(payload);
+//     return sentDataRes.data.records;
+//   } catch (err) {
+//     console.error("Error posting to table:", err.response?.data || err.message);
+//   }
+// };
 
-const getWordsFromDb = async () => {
-  try {
-    const getDataRes = await getAllWords();
-    return getDataRes.data.records;
-  } catch (err) {
-    console.error("Error posting to table:", err.response?.data || err.message);
-  }
-};
+// const getWordsFromDb = async () => {
+//   try {
+//     const getDataRes = await getAllWords();
+//     return getDataRes.data.records;
+//   } catch (err) {
+//     console.error("Error posting to table:", err.response?.data || err.message);
+//   }
+// };
 
 const removeUsedWords = (arr1, arr2) => {
-  const fetchedWordsSet = new Set(arr2.map((item) => item?.fields?.word));
+  const fetchedWordsSet = new Set(arr2.map((item) => item?.word));
 
   return arr1.filter((word) => !fetchedWordsSet.has(word));
+};
+
+const getAllWords = async () => {
+  try {
+    const retrievedData = await WordsDao.getAllWords();
+    return retrievedData;
+  } catch (err) {
+    console.error(
+      "Error getting all words:",
+      err.response?.data || err.message
+    );
+  }
+};
+
+const getWordForTheDay = async (timestamp) => {
+  try {
+    const retrievedData = await WordsDao.getWordByTimestamp(timestamp);
+    return retrievedData;
+  } catch (err) {
+    throw new Error(`No data found for the given timestamp: ${timestamp}`);
+  }
+};
+
+const incrementDailyPlays = async (timestamp) => {
+  try {
+    const incrementData = await WordsDao.incrementDailyPlays(timestamp);
+    return incrementData;
+  } catch (err) {
+    return err;
+  }
 };
 
 const generateHint = async () => {
@@ -110,7 +143,9 @@ const generateHint = async () => {
   const date = tomorrow.toLocaleDateString("en-GB");
 
   try {
-    const retrievedData = await getWordsFromDb();
+    // const retrievedData = await getWordsFromDb();
+
+    const retrievedData = await WordsDao.getAllWords();
 
     const getWords = removeUsedWords(words, retrievedData);
 
@@ -126,22 +161,33 @@ const generateHint = async () => {
 
     const hintPrompt = `For a word guess game, come up with just and only/strictly (it must never be a statement, it must be ttwo one-word alone) two one-word hints that start their first letters with capital letters for the word '${wordForTheDay}'. 
 
-It’s a daily word game like worlde and the user has only five attempts to guess the word based on the provided hints  
+It's a daily word game like worlde and the user has only five attempts to guess the word based on the provided hints  
 
 Rules for generating hints:
 1. If the word to be guessed is an easy or common word, make the hints difficult
 
 2. If the word to be guessed is less common or difficult , make the hints not so difficult/ easier
 
-3.  The hints should only help narrow down the word’s meaning or context but must not 
+3. The hints should only help narrow down the word's meaning or context but must not 
 explicitly include synonyms or overly obvious clues.
 
- 4.   Ensure the hints are distinct from each other and relate to different aspects of the word (e.g., meaning, usage, cultural reference, etc.).`;
+4. Ensure the hints are distinct from each other and relate to different aspects of the word (e.g., meaning, usage, cultural reference, etc.).`;
     const prompt = hintPrompt;
 
     const result = await model.generateContent(prompt);
 
     const data = result.response.text();
+
+    const oneDayInMs = 24 * 60 * 60 * 1000;
+
+    const parsedStartDate = new Date(startDate.split("/").reverse().join("-"));
+    const parsedDate = new Date(date.split("/").reverse().join("-"));
+
+    const puzzleNumber = Math.floor(
+      (parsedDate.getTime() - parsedStartDate.getTime()) / oneDayInMs
+    );
+
+    const dailyPlays = 0;
 
     const hintsArr = data
       .replace(/\s+/g, " ")
@@ -158,17 +204,34 @@ explicitly include synonyms or overly obvious clues.
         .replace(/&/g, (match, index) =>
           index === hints.indexOf("&") ? match : " & "
         ),
-      // wordForTheDay: encryptData(wordForTheDay, encryptionKey),
-      wordForTheDay,
+      word: encryptData(wordForTheDay, encryptionKey),
+      // word: wordForTheDay,
       timestamp: date,
+      puzzleNumber,
+      dailyPlays,
+      isEncrypted: true,
     };
 
-    const sendDataRes = await sendData(payloadData);
+    // const sendDataRes = await sendData(payloadData);
 
-    return { data, wordForTheDay, sendDataRes };
+    const sendDataRes = await WordsDao.sendWordToDb(payloadData);
+    return {
+      hints: hints
+        .replace(/&\s*$/, "")
+        .replace(/&/g, (match, index) =>
+          index === hints.indexOf("&") ? match : " & "
+        ),
+      word: encryptData(wordForTheDay, encryptionKey),
+      sendDataRes,
+    };
   } catch (error) {
     console.error("Failed to generate hints:", error);
   }
 };
 
-module.exports = { generateHint };
+module.exports = {
+  generateHint,
+  getAllWords,
+  getWordForTheDay,
+  incrementDailyPlays,
+};
