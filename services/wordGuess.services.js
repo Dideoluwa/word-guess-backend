@@ -47,6 +47,27 @@ const encryptData = (data, key) => {
   return `${iv.toString("hex")}:${encrypted}:${authTag.toString("hex")}`;
 };
 
+const decrypt = async (encryptedData) => {
+  try {
+    const [ivHex, encryptedHex, authTagHex] = encryptedData.split(":");
+    const iv = Buffer.from(ivHex, "hex");
+    const authTag = Buffer.from(authTagHex, "hex");
+    const keyHex = encryptionKey;
+    const key = await crypto.createDecipheriv(
+      encryptionAlgorithm,
+      Buffer.from(keyHex, "hex"),
+      iv
+    );
+    key.setAuthTag(authTag);
+    const encryptedArray = Buffer.from(encryptedHex, "hex");
+    const decrypted = Buffer.concat([key.update(encryptedArray), key.final()]);
+    return JSON.parse(decrypted.toString());
+  } catch (error) {
+    console.error("Decryption failed:", error);
+    throw error;
+  }
+};
+
 // const sentDataHandler = (payload) => {
 //   const response = axios({
 //     url: `${base_url}/v0/${id}/${encodeURIComponent(name)}`,
@@ -100,8 +121,13 @@ const encryptData = (data, key) => {
 //   }
 // };
 
-const removeUsedWords = (arr1, arr2) => {
-  const fetchedWordsSet = new Set(arr2.map((item) => item?.word));
+const removeUsedWords = async (arr1, arr2) => {
+  const fetchedWords = await Promise.all(
+    arr2.map(async (item) =>
+      item?.isWordEncrypted ? await decrypt(item.word) : item.word
+    )
+  );
+  const fetchedWordsSet = new Set(fetchedWords);
 
   return arr1.filter((word) => !fetchedWordsSet.has(word));
 };
@@ -209,7 +235,7 @@ explicitly include synonyms or overly obvious clues.
       timestamp: date,
       puzzleNumber,
       dailyPlays,
-      isEncrypted: true,
+      isWordEncrypted: true,
     };
 
     // const sendDataRes = await sendData(payloadData);
