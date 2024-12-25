@@ -17,7 +17,7 @@ class WordsDao {
           ...payload,
           createdAt: new Date(),
         });
-      return docRef.id;
+      return docRef;
     } catch (error) {
       throw new Error(`Error adding word to database: ${error}`);
     }

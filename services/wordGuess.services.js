@@ -129,7 +129,8 @@ const removeUsedWords = async (arr1, arr2) => {
   );
   const fetchedWordsSet = new Set(fetchedWords);
 
-  return arr1.filter((word) => !fetchedWordsSet.has(word));
+  const remainingWords = arr1.filter((word) => !fetchedWordsSet.has(word));
+  return remainingWords;
 };
 
 const getAllWords = async () => {
@@ -173,7 +174,7 @@ const generateHint = async () => {
 
     const retrievedData = await WordsDao.getAllWords();
 
-    const getWords = removeUsedWords(words, retrievedData);
+    const getWords = await removeUsedWords(words, retrievedData);
 
     if (!getWords.length) {
       throw new Error("No words available after filtering");
@@ -241,6 +242,7 @@ explicitly include synonyms or overly obvious clues.
     // const sendDataRes = await sendData(payloadData);
 
     const sendDataRes = await WordsDao.sendWordToDb(payloadData);
+
     return {
       hints: hints
         .replace(/&\s*$/, "")
